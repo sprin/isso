@@ -104,6 +104,41 @@ define(["app/dom", "app/utils", "app/config", "app/api", "app/jade", "app/i18n",
         });
     };
 
+    var insert_continue_thread = function(comment) {
+        var entrypoint = $("#isso-" + comment.id + " > .text-wrapper > .isso-follow-up");
+        comment.name = comment.id;
+        var el = $.htmlify(jade.render("continue-thread", {"comment": comment}));
+
+        entrypoint.append(el);
+
+        $("a.continue-thread", el).on("click", function() {
+            el.remove();
+            api.fetch($("#isso-thread").getAttribute("data-isso-id"),
+                config["reveal-on-click"], config["max-comments-nested"],
+                comment.id).then(
+                function(rv) {
+                    if (rv.total_replies === 0) {
+                        return;
+                    }
+
+                    var lastcreated = 0;
+                    rv.replies.forEach(function(commentObject) {
+                        insert(commentObject, false);
+                        if(commentObject.created > lastcreated) {
+                            lastcreated = commentObject.created;
+                        }
+                    });
+
+                    if(rv.hidden_replies > 0) {
+                        insert_loader(rv, lastcreated);
+                    }
+                },
+                function(err) {
+                    console.log(err);
+                });
+        });
+    };
+
     var insert = function(comment, scrollIntoView) {
         var el = $.htmlify(jade.render("comment", {"comment": comment}));
 
@@ -309,7 +344,9 @@ define(["app/dom", "app/utils", "app/config", "app/api", "app/jade", "app/i18n",
             if(comment.hidden_replies > 0) {
                 insert_loader(comment, lastcreated);
             }
-
+        }
+        if(comment.deeper_replies > 0) {
+            insert_continue_thread(comment);
         }
 
     };
@@ -317,6 +354,7 @@ define(["app/dom", "app/utils", "app/config", "app/api", "app/jade", "app/i18n",
     return {
         insert: insert,
         insert_loader: insert_loader,
+        insert_continue_thread: insert_continue_thread,
         Postbox: Postbox
     };
 });
