@@ -28,8 +28,6 @@ require(["app/lib/ready", "app/config", "app/i18n", "app/api", "app/isso", "app/
         }
 
         $("#isso-thread").append($.new('h4'));
-        $("#isso-thread").append(new isso.Postbox(null));
-        $("#isso-thread").append('<div id="isso-root"></div>');
 
         api.fetch($("#isso-thread").getAttribute("data-isso-id"),
             config["max-comments-top"],
@@ -40,8 +38,13 @@ require(["app/lib/ready", "app/config", "app/i18n", "app/api", "app/isso", "app/
                     return;
                 }
                 if (rv.locked == true) {
-                  config["locked"] = true;
+                  config.locked = true;
                 }
+
+                if (!config.locked) {
+                  $("#isso-thread").append(new isso.Postbox(null));
+                }
+                $("#isso-thread").append('<div id="isso-root"></div>');
 
                 var lastcreated = 0;
                 var count = rv.total_replies;
