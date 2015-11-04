@@ -5,6 +5,8 @@ define(["app/dom", "app/utils", "app/config", "app/api", "app/jade", "app/i18n",
 
     "use strict";
 
+    var done_rendering = new CustomEvent("done-rendering");
+
     var Postbox = function(parent) {
 
         var localStorage = utils.localStorageImpl,
@@ -63,6 +65,7 @@ define(["app/dom", "app/utils", "app/config", "app/api", "app/jade", "app/i18n",
                 $(".textarea", el).innerHTML = "";
                 $(".textarea", el).blur();
                 insert(comment, true);
+                document.dispatchEvent(done_rendering);
 
                 if (parent !== null) {
                     el.onsuccess();
@@ -110,6 +113,7 @@ define(["app/dom", "app/utils", "app/config", "app/api", "app/jade", "app/i18n",
                     if(rv.hidden_replies > 0) {
                         insert_loader(rv, lastcreated);
                     }
+                    document.dispatchEvent(done_rendering);
                 },
                 function(err) {
                     console.log(err);
@@ -145,6 +149,7 @@ define(["app/dom", "app/utils", "app/config", "app/api", "app/jade", "app/i18n",
                     if(rv.hidden_replies > 0) {
                         insert_loader(rv, lastcreated);
                     }
+                    document.dispatchEvent(done_rendering);
                 },
                 function(err) {
                     console.log(err);
@@ -384,10 +389,12 @@ define(["app/dom", "app/utils", "app/config", "app/api", "app/jade", "app/i18n",
         if(comment.deeper_replies > 0) {
             insert_continue_thread(comment);
         }
+        document.dispatchEvent(done_rendering);
 
     };
 
     return {
+        done_rendering: done_rendering,
         insert: insert,
         insert_loader: insert_loader,
         insert_continue_thread: insert_continue_thread,

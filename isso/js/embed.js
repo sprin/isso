@@ -58,6 +58,7 @@ require(["app/lib/ready", "app/config", "app/i18n", "app/api", "app/isso", "app/
                 if (window.location.hash.length > 0) {
                     $(window.location.hash).scrollIntoView();
                 }
+                document.dispatchEvent(isso.done_rendering);
             },
             function(err) {
                 console.log(err);
