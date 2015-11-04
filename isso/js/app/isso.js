@@ -204,6 +204,7 @@ define(["app/dom", "app/utils", "app/config", "app/api", "app/jade", "app/i18n",
             text   = $("#isso-" + comment.id + " > .text-wrapper > .text");
 
         var form = null;  // XXX: probably a good place for a closure
+
         if (config["nesting-level"] >= 1) {
           $("a.reply", footer).toggle("click",
               function(toggler) {
@@ -258,93 +259,108 @@ define(["app/dom", "app/utils", "app/config", "app/api", "app/jade", "app/i18n",
             });
         }
 
-        $("a.edit", footer).toggle("click",
-            function(toggler) {
-                var edit = $("a.edit", footer);
-                var avatar = config["avatar"] ? $(".avatar", el, false)[0] : null;
+        if (!config.locked) {
+          $("a.reply", footer).toggle("click",
+              function(toggler) {
+                  form = footer.insertAfter(new Postbox(comment.parent === null ? comment.id : comment.parent));
+                  form.onsuccess = function() { toggler.next(); };
+                  $(".textarea", form).focus();
+                  $("a.reply", footer).textContent = i18n.translate("comment-close");
+              },
+              function() {
+                  form.remove();
+                  $("a.reply", footer).textContent = i18n.translate("comment-reply");
+              }
+          );
 
-                edit.textContent = i18n.translate("comment-save");
-                edit.insertAfter($.new("a.cancel", i18n.translate("comment-cancel"))).on("click", function() {
-                    toggler.canceled = true;
-                    toggler.next();
-                });
+          $("a.edit", footer).toggle("click",
+              function(toggler) {
+                  var edit = $("a.edit", footer);
+                  var avatar = config["avatar"] ? $(".avatar", el, false)[0] : null;
 
-                toggler.canceled = false;
-                api.view(comment.id, 1).then(function(rv) {
-                    var textarea = lib.editorify($.new("div.textarea"));
+                  edit.textContent = i18n.translate("comment-save");
+                  edit.insertAfter($.new("a.cancel", i18n.translate("comment-cancel"))).on("click", function() {
+                      toggler.canceled = true;
+                      toggler.next();
+                  });
 
-                    textarea.innerHTML = utils.detext(rv.text);
-                    textarea.focus();
+                  toggler.canceled = false;
+                  api.view(comment.id, 1).then(function(rv) {
+                      var textarea = lib.editorify($.new("div.textarea"));
 
-                    text.classList.remove("text");
-                    text.classList.add("textarea-wrapper");
+                      textarea.innerHTML = utils.detext(rv.text);
+                      textarea.focus();
 
-                    text.textContent = "";
-                    text.append(textarea);
-                });
+                      text.classList.remove("text");
+                      text.classList.add("textarea-wrapper");
 
-                if (avatar !== null) {
-                    avatar.hide();
-                }
-            },
-            function(toggler) {
-                var textarea = $(".textarea", text);
-                var avatar = config["avatar"] ? $(".avatar", el, false)[0] : null;
+                      text.textContent = "";
+                      text.append(textarea);
+                  });
 
-                if (! toggler.canceled && textarea !== null) {
-                    if (utils.text(textarea.innerHTML).length < 3) {
-                        textarea.focus();
-                        toggler.wait();
-                        return;
-                    } else {
-                        api.modify(comment.id, {"text": utils.text(textarea.innerHTML)}).then(function(rv) {
-                            text.innerHTML = rv.text;
-                            comment.text = rv.text;
-                        });
-                    }
-                } else {
-                    text.innerHTML = comment.text;
-                }
+                  if (avatar !== null) {
+                      avatar.hide();
+                  }
+              },
+              function(toggler) {
+                  var textarea = $(".textarea", text);
+                  var avatar = config["avatar"] ? $(".avatar", el, false)[0] : null;
 
-                text.classList.remove("textarea-wrapper");
-                text.classList.add("text");
+                  if (! toggler.canceled && textarea !== null) {
+                      if (utils.text(textarea.innerHTML).length < 3) {
+                          textarea.focus();
+                          toggler.wait();
+                          return;
+                      } else {
+                          api.modify(comment.id, {"text": utils.text(textarea.innerHTML)}).then(function(rv) {
+                              text.innerHTML = rv.text;
+                              comment.text = rv.text;
+                          });
+                      }
+                  } else {
+                      text.innerHTML = comment.text;
+                  }
 
-                if (avatar !== null) {
-                    avatar.show();
-                }
+                  text.classList.remove("textarea-wrapper");
+                  text.classList.add("text");
 
-                $("a.cancel", footer).remove();
-                $("a.edit", footer).textContent = i18n.translate("comment-edit");
-            }
-        );
+                  if (avatar !== null) {
+                      avatar.show();
+                  }
 
-        $("a.delete", footer).toggle("click",
-            function(toggler) {
-                var del = $("a.delete", footer);
-                var state = ! toggler.state;
+                  $("a.cancel", footer).remove();
+                  $("a.edit", footer).textContent = i18n.translate("comment-edit");
+              }
+          );
 
-                del.textContent = i18n.translate("comment-confirm");
-                del.on("mouseout", function() {
-                    del.textContent = i18n.translate("comment-delete");
-                    toggler.state = state;
-                    del.onmouseout = null;
-                });
-            },
-            function() {
-                var del = $("a.delete", footer);
-                api.remove(comment.id).then(function(rv) {
-                    if (rv) {
-                        el.remove();
-                    } else {
-                        $("span.note", header).textContent = i18n.translate("comment-deleted");
-                        text.innerHTML = "<p>&nbsp;</p>";
-                        $("a.edit", footer).remove();
-                        $("a.delete", footer).remove();
-                    }
-                    del.textContent = i18n.translate("comment-delete");
-                });
-            }
-        );
+          $("a.delete", footer).toggle("click",
+              function(toggler) {
+                  var del = $("a.delete", footer);
+                  var state = ! toggler.state;
+
+                  del.textContent = i18n.translate("comment-confirm");
+                  del.on("mouseout", function() {
+                      del.textContent = i18n.translate("comment-delete");
+                      toggler.state = state;
+                      del.onmouseout = null;
+                  });
+              },
+              function() {
+                  var del = $("a.delete", footer);
+                  api.remove(comment.id).then(function(rv) {
+                      if (rv) {
+                          el.remove();
+                      } else {
+                          $("span.note", header).textContent = i18n.translate("comment-deleted");
+                          text.innerHTML = "<p>&nbsp;</p>";
+                          $("a.edit", footer).remove();
+                          $("a.delete", footer).remove();
+                      }
+                      del.textContent = i18n.translate("comment-delete");
+                  });
+              }
+          );
+        }
 
         // remove edit and delete buttons when cookie is gone
         var clear = function(button) {

@@ -39,6 +39,9 @@ require(["app/lib/ready", "app/config", "app/i18n", "app/api", "app/isso", "app/
                     $("#isso-thread > h4").textContent = i18n.translate("no-comments");
                     return;
                 }
+                if (rv.locked == true) {
+                  config["locked"] = true;
+                }
 
                 var lastcreated = 0;
                 var count = rv.total_replies;
