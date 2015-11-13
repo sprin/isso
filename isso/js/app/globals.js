@@ -10,8 +10,12 @@ define(function() {
     };
 
     Offset.prototype.localTime = function() {
-        return new Date((new Date()).getTime() + this.values.reduce(
-            function(a, b) { return a + b; }) / this.values.length);
+        if (this.values.length) {
+          return new Date((new Date()).getTime() + this.values.reduce(
+              function(a, b) { return a + b; }) / this.values.length);
+        } else {
+          return new Date();
+        }
     };
 
     return {
