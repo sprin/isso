@@ -46,6 +46,11 @@ define(["app/lib/promise", "app/globals"], function(Q, globals) {
                 globals.offset.update(new Date(date));
             }
 
+            var csrf_token = xhr.getResponseHeader("X-CSRF-Token");
+            if (csrf_token !== null) {
+                globals.csrf_token = csrf_token;
+            }
+
             var cookie = xhr.getResponseHeader("X-Set-Cookie");
             if (cookie && cookie.match(/^isso-/)) {
                 document.cookie = cookie;
@@ -64,6 +69,9 @@ define(["app/lib/promise", "app/globals"], function(Q, globals) {
             xhr.open(method, url, true);
             xhr.withCredentials = true;
             xhr.setRequestHeader("Content-Type", "application/json");
+            if (globals.csrf_token !== null) {
+                xhr.setRequestHeader("X-CSRF-Token", globals.csrf_token);
+            }
 
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === 4) {
